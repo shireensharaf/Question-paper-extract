@@ -22,10 +22,11 @@ def text_parser(text):
     print('#########################################')
     text= unicode(text, "UTF-8")
     text = re.sub(ur'(\u00a0)+', '\n', text)
-    l = re.split("(?<!^)(\n|\f)(?=\d|Ques[0-9]*)", text)
+    l = re.split("(?<!^)(\n|\f)(?=\d+|Ques[0-9]+)", text)
    
     d = []
     category ='None'
+    sub_category='none'
     categories = ['infosys', 'amcat', 'accenture','capgemini']
     subcategory=['aptitude','logical reasoning']
     category_check =text[:200].split()
@@ -49,8 +50,9 @@ def text_parser(text):
             splitter = ''
             options=[]
             op_splitter = ''
-            sub_category='none'
+            ans_split=''
             split_sol = block.splitlines()
+            print(split_sol)
             for i in split_sol:
                 if re.search(r'^Sol(ution)*:', i):
                     splitter=i
@@ -62,7 +64,9 @@ def text_parser(text):
             if splitter:
                 splitted_with_sol = split_sol[:split_sol.index(splitter)]
                 ques_sec = splitted_with_sol
-                quest_block['solution']='\n'.join(split_sol[split_sol.index(splitter):])
+                solution__text='\n'.join(split_sol[split_sol.index(splitter):])
+                quest_block['solution']=solution__text
+               
                 
             else:
                 ques_sec = split_sol
@@ -75,7 +79,9 @@ def text_parser(text):
             if op_splitter:
                 splitted_with_op= ques_sec[:ques_sec.index(op_splitter)]
                 if ans_split:
+    
                     option='\n'.join(ques_sec[ques_sec.index(op_splitter):ques_sec.index(ans_split)])
+                    
                     answer_line=ques_sec[ques_sec.index(ans_split):]
                     ans = re.sub(r'Ans(wer)*(\.)*(\s)*(-)*', '', '\n'.join(answer_line))
                     quest_block['ans']=ans
@@ -87,7 +93,7 @@ def text_parser(text):
                 
                 
                 op_lines = re.split('\n(\s)*\([a-zA-Z]\)', option) 
-                print(op_lines)
+               
                 print('\n\n\n\n\n')
                 
                 # for i in op_lines:
@@ -96,7 +102,7 @@ def text_parser(text):
                 for op in op_lines:
                     # op = op.encode('ascii')
                     op = re.sub('Op\s', '', op)
-                    print(op)
+                   
                     if op != ' ':
                         options.append(op)
             for i in ques_sec:
