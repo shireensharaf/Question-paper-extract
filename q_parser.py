@@ -8,7 +8,7 @@ def main():
     datas=[]
     for f in files:
         if f.lower().endswith('.pdf'):
-            text = textract.process(f)
+            text = textract.process(f,input_encoding=None, output_encoding="utf8")
             data = text_parser_pdf(text)
             datas.extend(data)
 
@@ -22,14 +22,14 @@ def main():
         json.dump(datas, outfile, indent=4)
 
 def parser_main(text):
-    l = re.split("(?<!^)(\n|\f)(?=(\d+)|(Ques[0-9]+)|(Question\s\d))(?!.,)", text)
-
+    l = re.split("(?<!^)(\n|\f)(?=(\d+)|(Ques[0-9]+)|(Question\s\d)|(Ques))(?!.,)", text)
+    
     y=[]
     d = []
     category ='None'
     sub_category='none'
     categories = ['infosys', 'amcat', 'accenture','capgemini','ibm', 'lg','l&t','mindtree']
-    subcategory=['aptitude','logical reasoning','number series','logical section']
+    subcategory=['aptitude','logical reasoning','english','number series','logical section','quantitative']
   
     category_check =text[:500].split()
 
@@ -41,13 +41,13 @@ def parser_main(text):
         if text_encode.lower() in categories:
             category = i.lower()
             break
+    # for i in l:
+    #     try:
+    #         y.append(unicode(i, "UTF-8"))
+    #     except:
+    #         y.append(i)
+    # print(y)
     for i in l:
-        try:
-            y.append(unicode(i, "UTF-8"))
-        except:
-            y.append(i)
-    print(y)
-    for i in y:
         remove_texts=['Visit PrepInsta.com for more puzzles, placement papers & Interview questions and\ntutorials.\n\nPage\s\d', 'Visit PrepInsta.com for more puzzles, placement papers & Interview questions and\ntutorials.\n\n[\f]*Page\s\d\d', 'Visit PrepInsta.com for more puzzles, placement papers & Page \d Interview questions\nand tutorials.', 'Visit PrepInsta.com for more puzzles, placement papers & Page \d\d Interview questions\nand tutorials.', 'https://www.freshersnow.com/placement-papers-download/','Accenture Aptitude Questions and Answers with Explanation','Accenture Logical Reasoning Questions and Answers with Explanation', 'www.allindiajobs.in','\nllin\n', '\nw\n', '\naj\n', '\ndi\n', '\nob\n', '\nin\n', '\ns.\n', '\n.a\n', 'https://www.freshersnow.com/']
         for sub in subcategory:
             try:
@@ -61,9 +61,11 @@ def parser_main(text):
             except:
                 pass
         try:
-            if re.search(r'(^[0-9]+[\.|\)])|(Question\s\d+)|(Question\s\d)',i):
+            if re.search(r'(^[0-9]+[\.|\)])|(Question\s\d+)|(Question\s\d)|(Ques)',i):
+                # print(i)
                 block = re.sub(r'^[0-9]+[\.|\)]', '', i)
                 block = re.sub(r'Question\s\d+(\n)*', '', i)
+                block = re.sub(r'Ques(\.)*', '', i)
                 quest_block = dict()
                 ques=[]
                 splitter = ''
@@ -78,7 +80,7 @@ def parser_main(text):
                     elif re.search(r'^Explanation(:)*', i):
                         splitter=i
                     
-
+               
             
                 if splitter:
                     splitted_with_sol = split_sol[:split_sol.index(splitter)]
@@ -89,12 +91,13 @@ def parser_main(text):
                 
                 else:
                     ques_sec = split_sol
+                
                 for i in ques_sec:
-                    if (not op_splitter) and (re.search(r'^[a-eA-E](\.|\))', i) or re.search(r'[Op]\s[0-9](:|\.)', i)or re.search(r'^(\s)*\([a-zA-Z]\)', i)):
+                    if (not op_splitter) and (re.search(r'^[a-eA-E](\.|\))', i) or re.search(r'Op(tion)*\s[0-9](:|\.)', i)or re.search(r'^(\s)*\([a-zA-Z]\)', i)):
                         op_splitter=i
-                    if re.search(r'Ans(wer)*', i) or re.search(r'Correct\sOp', i):
+                    if re.search(r'Ans(wer)*', i) or re.search(r'Correct\sOp(tion is)*', i):
                         ans_split = i
-                    
+              
                 if op_splitter:
                     splitted_with_op= ques_sec[:ques_sec.index(op_splitter)]
                     if ans_split:
@@ -103,35 +106,45 @@ def parser_main(text):
                     
                         answer_line=ques_sec[ques_sec.index(ans_split):]
                         ans = re.sub(r'Ans(wer)*(\.)*(\s)*(-)*', '', '\n'.join(answer_line))
+                        ans = re.sub(r'Correct Option is:', '', '\n'.join(answer_line))
                         quest_block['ans']=ans
                         # print(answer_line)
                     else:
                         option='\n'.join(ques_sec[ques_sec.index(op_splitter):]) 
                     
                     ques_sec=splitted_with_op
-                
-                    op_lines = re.split('\n(\s)*\([a-fA-F]\)', option)
+                   
+                    op_lines = re.split(r'([\f|\n](\s)*\([a-fA-F]\))', option)
                     if len(op_lines) < 2:
-                        op_lines = re.split('\n(\s)*[a-fA-F]\)', option)
+                        op_lines = re.split(r'[\f|\n](\s)*[a-fA-F]\)', option)
                     if len(op_lines) < 2:
-                        op_lines = re.split('\n(\s)*[a-fA-F]\.', option)
-                        print('\n')
-                    
-                        # for i in op_lines:
-                        #     if re.search(r'^Ans(wer)*', i) or re.search(r'Correct\sOp', i):
+                        op_lines = re.split(r'([\f|\n]Op\s\d:)', option)
+                    if len(op_lines) < 2:
+                        op_lines = re.split(r'([\f|\n]Option\s\d:)', option)
+                    if len(op_lines) < 2:
+                        op_lines = re.split(r'[\f|\n](\s)*[a-fA-F]\.', option)
+                    print('\n')
+                   
+                    # for i in op_lines:
+                    #     if re.search(r'^Ans(wer)*', i) or re.search(r'Correct\sOp', i):
                    
                     for op in op_lines:
-                        # op = re.sub('Op\s', '', op)
-                    
-                        if op != ' ' and op != None:
+                        # op = re.sub(r'Option\s\d:', '', op)
+                        # op = re.sub(r'Op\s\d:', '', op)
+                        # op = re.sub(r'\n\n', ' ', op)
+                        if op != ' ' and op != None and op != '\n' and op != '\f':
                             options.append(op)
+                    print(ques_sec)
+                      
                 elif ans_split:
                     splitted_with_answer= ques_sec[:ques_sec.index(ans_split)]
                     answer_line=ques_sec[ques_sec.index(ans_split):]
                     ans = re.sub(r'Ans(wer)*(\.)*(\s)*(-)*', '', '\n'.join(answer_line))
+                    
                     quest_block['ans']=ans
                     # print(answer_line)
-                    ques_sec=splitted_with_answer      
+                    ques_sec=splitted_with_answer
+               
                 for i in ques_sec:
                     ques.append(i)
                 ques[0]= re.sub(r'^[0-9]+[\.|\)]', '', ques[0])
