@@ -22,14 +22,14 @@ def main():
         json.dump(datas, outfile, indent=4)
 
 def parser_main(text):
-    l = re.split("(?<!^)(\n|\f)(?=(\d+)|(Ques[0-9]+)|(Question\s\d)|(Ques))(?!.,)", text)
+    l = re.split("(?<!^)(\n|\f)(?=(\d+)\.|(Ques[0-9]+)|(Question\s\d)|(Ques))(?!.,)", text)
     
     y=[]
     d = []
     category ='None'
-    sub_category='none'
+    sub_category='quantitative'
     categories = ['infosys', 'amcat', 'accenture','capgemini','ibm', 'lg','l&t','mindtree']
-    subcategory=['aptitude','logical reasoning','english','number series','logical section','quantitative']
+    subcategory=['aptitude','logical reasoning','logical section','verbal','quantitative', 'reasoning']
   
     category_check =text[:500].split()
 
@@ -63,7 +63,7 @@ def parser_main(text):
         try:
             if re.search(r'(^[0-9]+[\.|\)])|(Question\s\d+)|(Question\s\d)|(Ques)',i):
                 # print(i)
-                block = re.sub(r'^[0-9]+[\.|\)]', '', i)
+                block = re.sub(r'^[0-9]+[\.]', '', i)
                 block = re.sub(r'Question\s\d+(\n)*', '', i)
                 block = re.sub(r'Ques(\.)*', '', i)
                 quest_block = dict()
@@ -91,13 +91,13 @@ def parser_main(text):
                 
                 else:
                     ques_sec = split_sol
-                
+                print(ques_sec)
                 for i in ques_sec:
-                    if (not op_splitter) and (re.search(r'^[a-eA-E](\.|\))', i) or re.search(r'Op(tion)*\s[0-9](:|\.)', i)or re.search(r'^(\s)*\([a-zA-Z]\)', i)):
+                    if (not op_splitter) and (re.search(r'^(\f)*[a-eA-E](\.|\))', i) or re.search(r'Op(tion)*\s[0-9](:|\.)', i)or re.search(r'^(\s)*\([a-zA-Z]\)', i)) or re.search(r'^1\)', i):
                         op_splitter=i
                     if re.search(r'Ans(wer)*', i) or re.search(r'Correct\sOp(tion is)*', i):
                         ans_split = i
-              
+                print(op_splitter)
                 if op_splitter:
                     splitted_with_op= ques_sec[:ques_sec.index(op_splitter)]
                     if ans_split:
@@ -105,6 +105,7 @@ def parser_main(text):
                         option='\n'.join(ques_sec[ques_sec.index(op_splitter):ques_sec.index(ans_split)])
                     
                         answer_line=ques_sec[ques_sec.index(ans_split):]
+                        print(answer_line)
                         ans = re.sub(r'Ans(wer)*(\.)*(\s)*(-)*', '', '\n'.join(answer_line))
                         ans = re.sub(r'Correct Option is:', '', '\n'.join(answer_line))
                         quest_block['ans']=ans
@@ -118,11 +119,13 @@ def parser_main(text):
                     if len(op_lines) < 2:
                         op_lines = re.split(r'[\f|\n](\s)*[a-fA-F]\)', option)
                     if len(op_lines) < 2:
+                        op_lines = re.split(r'[\f|\n][1-6]\)', option)
+                    if len(op_lines) < 2:
                         op_lines = re.split(r'([\f|\n]Op\s\d:)', option)
                     if len(op_lines) < 2:
                         op_lines = re.split(r'([\f|\n]Option\s\d:)', option)
                     if len(op_lines) < 2:
-                        op_lines = re.split(r'[\f|\n](\s)*[a-fA-F]\.', option)
+                        op_lines = re.split(r'[\f|\n]*(\s)*[a-fA-F]\.', option)
                     print('\n')
                    
                     # for i in op_lines:
@@ -132,9 +135,9 @@ def parser_main(text):
                         # op = re.sub(r'Option\s\d:', '', op)
                         # op = re.sub(r'Op\s\d:', '', op)
                         # op = re.sub(r'\n\n', ' ', op)
-                        if op != ' ' and op != None and op != '\n' and op != '\f':
+                        if op != ' ' and op != None and op != '\n' and op != '\f' and op != '':
                             options.append(op)
-                    print(ques_sec)
+                    
                       
                 elif ans_split:
                     splitted_with_answer= ques_sec[:ques_sec.index(ans_split)]
